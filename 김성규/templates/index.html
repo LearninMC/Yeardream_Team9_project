@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block scripts %}
+<script>
+    function postContent() {
+        let content = $("#my-content").val()
+        let author = `{{g.user.user_id}}`
+
+        $.ajax({
+            url: '/post',
+            type: 'post',
+            data: {
+                'content': content,
+                'author': author
+            },
+            success: function (res) {
+                let result = res['result']
+                if (result == "success") {
+                    window.location.reload()
+                } else {
+                    alert("저장오류!")
+                }
+            }
+        })
+    }
+
+    function deletePost(id) {
+        let author = `{{g.user.user_id}}`
+        $.ajax({
+            url: '/post',
+            type: 'DELETE',
+            data: {
+                'id': id,
+                'author': author
+            },
+            success: function (res) {
+                if (res['result'] == 'success') {
+                    alert("삭제 성공!")
+                    window.location.href = '/board'
+                } else {
+                    alert("삭제 실패!")
+                }
+            }
+        })
+    }
+    function postUpdatePost(id) {
+        let content = $(`#userEidContent${id}`).val()
+        $.ajax({
+            url: '/post',
+            type: 'PATCH',
+            data: {
+                "id": id,
+                "content": content
+            },
+            success: function (res) {
+                if (res['result'] == 'success') {
+                    alert("수정성공")
+                    window.location.href = '/board'
+                }
+            }
+        })
+    }
+    function updatePost(id) {
+        let content = $(`#userContent${id}`).text()
+        let tmpHtml = `<textarea id=userEidContent${id} class="form-control" rows="3"></textarea>`
+        let tmpBtn = `<button class="btn btn-sm btn-success" onclick="postUpdatePost(${id})">수정완료</button>`
+        $("#edit-area").empty()
+        $("#edit-area").append(tmpHtml)
+        $(`#editBtn${id}`).hide()
+        $(`#userEidContent${id}`).val(content)
+        $("#edit-area").append(tmpBtn)
+
+    }
+</script>
+{% endblock %}
+
+{% block content %}
+<h2 class="title">통계분석툴 사용 후, 새로 알게된 인사이트를 알려주세요 </h2>
+<hr>
+<div class="card">
+    <h5 class="card-header">새 글 작성</h5>
+    <div class="card-body">
+        <div class="mb-3">
+            <label class="form-label">{{g.user.user_id}}님, 글을 작성하세요</label>
+            <textarea id='my-content' class="form-control" rows="3"></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="postContent()">작성하기</button>
+    </div>
+</div>
+<hr>
+{% for post in post_list %}
+<div class="card mt-2">
+    <div class="card-body">
+        <div class="mb-3">
+            <label class="form-label">{{post.author}}</label>
+            <div id='edit-area'>
+                <p id='userContent{{post.id}}'>{{post.content}}</p>
+            </div>
+        </div>
+        {{post.created_at}}
+    </div>
+
+    {% if post.author == g.user.user_id %}
+    <div class="card-footer text-muted">
+        <button class="btn btn-sm btn-warning" onclick="deletePost('{{post.id}}')">삭제하기</button>
+        <button id='editBtn{{post.id}}' class="btn btn-sm btn-success" onclick="updatePost('{{post.id}}')">수정하기</button>
+    </div>
+    {% endif %}
+
+</div>
+{% endfor %}
+
+{% endblock %}
